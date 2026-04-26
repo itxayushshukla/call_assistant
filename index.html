@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NABOT — AI Attendance System</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111418;
+    --surface2: #181c22;
+    --border: #1e2530;
+    --accent: #00e5ff;
+    --accent2: #ff6b35;
+    --accent3: #7fff5f;
+    --text: #e8edf3;
+    --muted: #5a6478;
+    --danger: #ff3d5a;
+    --warn: #ffb800;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  }
+  .logo { display: flex; align-items: center; gap: 14px; }
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%,100% { box-shadow: 0 0 10px rgba(0,229,255,0.4); }
+    50% { box-shadow: 0 0 24px rgba(0,229,255,0.8); }
+  }
+  .logo-text h1 { font-size: 22px; font-weight: 800; letter-spacing: 3px; color: var(--accent); }
+  .logo-text p { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; letter-spacing: 1px; }
+
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .time-display {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .time-display span { color: var(--accent); font-weight: 700; }
+
+  .holiday-bar {
+    background: linear-gradient(135deg, #1a1200, #2a1c00);
+    border: 1px solid var(--warn);
+    border-radius: var(--radius);
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.4s ease;
+  }
+  .holiday-bar.active { opacity: 1; max-height: 80px; padding: 14px 22px; }
+  .holiday-bar-text { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: var(--warn); }
+
+  .controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .date-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 10px 18px;
+    border-radius: 8px;
+  }
+  .date-badge strong { color: var(--text); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #33eaff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,229,255,0.3); }
+  .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-warn { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
+  .btn-warn:hover { background: var(--warn); color: #000; }
+  .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  .stat-card.blue::before { background: var(--accent); }
+  .stat-card.orange::before { background: var(--accent2); }
+  .stat-card.green::before { background: var(--accent3); }
+  .stat-card.red::before { background: var(--danger); }
+  .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; font-family: 'Space Mono', monospace; }
+  .stat-value { font-size: 30px; font-weight: 800; line-height: 1; }
+  .stat-card.blue .stat-value { color: var(--accent); }
+  .stat-card.orange .stat-value { color: var(--accent2); }
+  .stat-card.green .stat-value { color: var(--accent3); }
+  .stat-card.red .stat-value { color: var(--danger); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'Space Mono', monospace; }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    font-family: 'Space Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .branch-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .branch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .branch-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .branch-card.b1::before { background: radial-gradient(circle at 80% 20%, rgba(0,229,255,0.08), transparent 60%); }
+  .branch-card.b2::before { background: radial-gradient(circle at 80% 20%, rgba(255,107,53,0.08), transparent 60%); }
+  .branch-card.b3::before { background: radial-gradient(circle at 80% 20%, rgba(127,255,95,0.08), transparent 60%); }
+  .branch-card.b4::before { background: radial-gradient(circle at 80% 20%, rgba(255,184,0,0.08), transparent 60%); }
+  .branch-card:hover::before { opacity: 1; }
+  .branch-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.4); }
+  .branch-card.b2:hover { border-color: var(--accent2); }
+  .branch-card.b3:hover { border-color: var(--accent3); }
+  .branch-card.b4:hover { border-color: var(--warn); }
+
+  .branch-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .branch-label { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+  .b1 .branch-label { color: var(--accent); }
+  .b2 .branch-label { color: var(--accent2); }
+  .b3 .branch-label { color: var(--accent3); }
+  .b4 .branch-label { color: var(--warn); }
+  .branch-sub { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .branch-icon { font-size: 28px; opacity: 0.5; }
+  .branch-stats { display: flex; gap: 16px; margin-bottom: 14px; }
+  .b-stat { text-align: center; }
+  .b-stat-num { font-size: 22px; font-weight: 800; }
+  .b-stat-lab { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; }
+  .branch-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .branch-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+  .b1 .branch-bar-fill { background: var(--accent); }
+  .b2 .branch-bar-fill { background: var(--accent2); }
+  .b3 .branch-bar-fill { background: var(--accent3); }
+  .b4 .branch-bar-fill { background: var(--warn); }
+  .branch-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+  .open-hint { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; display: flex; align-items: center; gap: 6px; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,7,10,0.88);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 860px;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+    margin: auto;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .modal-title { font-size: 18px; font-weight: 800; }
+  .modal-close {
+    width: 34px; height: 34px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { border-color: var(--danger); color: var(--danger); }
+
+  .modal-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .search-box {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: var(--accent); }
+
+  .student-list { padding: 0; }
+  .student-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 180px 120px 80px;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .student-row:hover { background: var(--surface2); }
+  .student-row.absent-row { background: rgba(255,61,90,0.05); }
+  .student-num { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); }
+  .student-name { font-size: 14px; font-weight: 600; }
+  .student-phone { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); }
+  .status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+  }
+  .badge-present { background: rgba(127,255,95,0.12); color: var(--accent3); border: 1px solid rgba(127,255,95,0.25); }
+  .badge-absent { background: rgba(255,61,90,0.12); color: var(--danger); border: 1px solid rgba(255,61,90,0.25); }
+  .badge-pending { background: rgba(90,100,120,0.15); color: var(--muted); border: 1px solid var(--border); }
+
+  .attendance-toggle { display: flex; gap: 8px; }
+  .radio-btn { position: relative; cursor: pointer; }
+  .radio-btn input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .radio-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    user-select: none;
+  }
+  .radio-btn input:checked + .radio-label.p-label { border-color: var(--accent3); background: rgba(127,255,95,0.1); color: var(--accent3); }
+  .radio-btn input:checked + .radio-label.a-label { border-color: var(--danger); background: rgba(255,61,90,0.1); color: var(--danger); }
+
+  .modal-footer {
+    padding: 18px 28px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .absent-count { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--muted); }
+  .absent-count span { color: var(--danger); font-weight: 700; font-size: 16px; }
+
+  .log-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .log-header {
+    padding: 16px 22px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .log-title { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'Space Mono', monospace; }
+  .log-body { padding: 14px; font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); max-height: 180px; overflow-y: auto; }
+  .log-entry { padding: 5px 0; border-bottom: 1px solid rgba(30,37,48,0.5); display: flex; gap: 12px; }
+  .log-time { color: var(--accent); min-width: 60px; }
+  .log-msg { color: var(--text); }
+  .log-entry.success .log-msg { color: var(--accent3); }
+  .log-entry.error .log-msg { color: var(--danger); }
+  .log-entry.warn .log-msg { color: var(--warn); }
+
+  .scheduler {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .sched-info { display: flex; align-items: center; gap: 16px; }
+  .sched-clock {
+    width: 50px; height: 50px;
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .sched-text h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .sched-text p { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .sched-time-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    outline: none;
+    color-scheme: dark;
+  }
+  .sched-time-input:focus { border-color: var(--accent); }
+
+  .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 999; display: flex; flex-direction: column; gap: 10px; }
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateX(120%);
+    transition: transform 0.3s ease;
+    min-width: 260px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.success { border-left: 3px solid var(--accent3); }
+  .toast.error { border-left: 3px solid var(--danger); }
+  .toast.info { border-left: 3px solid var(--accent); }
+  .toast.warn { border-left: 3px solid var(--warn); }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  @media (max-width: 700px) {
+    .branch-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .student-row { grid-template-columns: 30px 1fr 100px; }
+    .student-phone, .status-badge { display: none; }
+  }
+
+  /* ── REPORT MODAL ── */
+  .report-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,7,10,0.92);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .report-overlay.open { opacity: 1; pointer-events: all; }
+  .report-modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 780px;
+    margin: auto;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+  }
+  .report-overlay.open .report-modal { transform: translateY(0); }
+
+  .report-toolbar {
+    background: #111418;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .report-toolbar-title { color: #00e5ff; font-family: 'Space Mono',monospace; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+  .report-toolbar-actions { display: flex; gap: 10px; }
+
+  .report-content {
+    background: #fff;
+    color: #111;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 36px 40px;
+  }
+  .rpt-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid #111; }
+  .rpt-logo-name { font-size: 26px; font-weight: 900; letter-spacing: 3px; color: #111; }
+  .rpt-logo-sub { font-size: 11px; color: #666; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+  .rpt-meta { text-align: right; font-size: 12px; color: #555; line-height: 1.8; }
+  .rpt-meta strong { color: #111; }
+
+  .rpt-summary { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 28px; }
+  .rpt-stat { border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px 16px; text-align: center; }
+  .rpt-stat-num { font-size: 28px; font-weight: 800; color: #111; }
+  .rpt-stat-lab { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+  .rpt-stat.red .rpt-stat-num { color: #e53935; }
+  .rpt-stat.green .rpt-stat-num { color: #2e7d32; }
+
+  .rpt-section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    color: #888; margin-bottom: 10px; padding-bottom: 6px;
+    border-bottom: 1px solid #e8e8e8;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .rpt-section-title span { background: #111; color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 20px; }
+
+  .rpt-table { width: 100%; border-collapse: collapse; margin-bottom: 28px; font-size: 13px; }
+  .rpt-table thead tr { background: #111; color: #fff; }
+  .rpt-table thead th { padding: 10px 14px; text-align: left; font-weight: 700; font-size: 11px; letter-spacing: 0.8px; }
+  .rpt-table tbody tr { border-bottom: 1px solid #f0f0f0; }
+  .rpt-table tbody tr:nth-child(even) { background: #fafafa; }
+  .rpt-table tbody tr:hover { background: #fff8f0; }
+  .rpt-table td { padding: 11px 14px; vertical-align: middle; }
+  .rpt-table td .sr { font-size: 11px; color: #aaa; font-family: monospace; }
+  .rpt-table td .sname { font-weight: 600; color: #111; }
+  .rpt-table td .sphone { font-size: 12px; color: #555; font-family: monospace; }
+  .rpt-table td .sbranch { font-size: 11px; color: #777; }
+  .rpt-table td .sreason { background: #fff3e0; color: #bf360c; font-size: 12px; padding: 3px 10px; border-radius: 20px; display: inline-block; border: 1px solid #ffcc80; }
+  .rpt-table td .sreason.no-answer { background: #fce4ec; color: #880e4f; border-color: #f48fb1; }
+  .rpt-table td .scall { font-size: 11px; }
+  .rpt-table td .scall.done { color: #2e7d32; font-weight: 600; }
+  .rpt-table td .scall.pending { color: #e65100; }
+  .rpt-branch-divider { background: #f5f5f5; padding: 10px 14px; font-weight: 800; font-size: 12px; color: #333; letter-spacing: 1px; text-transform: uppercase; border-left: 4px solid #111; }
+
+  .rpt-footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #aaa; }
+  .rpt-footer .sig { font-style: italic; }
+  .rpt-empty { text-align: center; padding: 40px; color: #aaa; font-size: 14px; border: 2px dashed #ddd; border-radius: 8px; }
+  .rpt-empty .big { font-size: 32px; display: block; margin-bottom: 8px; }
+
+  @media print {
+    body * { visibility: hidden !important; }
+    .report-overlay, .report-overlay * { visibility: visible !important; }
+    .report-overlay { position: absolute; top: 0; left: 0; width: 100%; padding: 0; background: #fff; }
+    .report-modal { box-shadow: none; border-radius: 0; transform: none !important; }
+    .report-toolbar { display: none !important; }
+    .report-content { padding: 20px 28px; }
+    .rpt-table tbody tr:hover { background: inherit; }
+    @page { margin: 1cm; size: A4; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🤖</div>
+      <div class="logo-text">
+        <h1>NABOT</h1>
+        <p>AI ATTENDANCE VOICE SYSTEM</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="time-display">⏱ Calls scheduled at <span id="schedDisplay">19:00</span></div>
+      <button class="btn btn-warn" onclick="toggleHoliday()" id="holidayBtn">🏖 Mark Holiday</button>
+    </div>
+  </header>
+
+  <div class="holiday-bar" id="holidayBar">
+    <div class="holiday-bar-text">🏖 HOLIDAY MODE ACTIVE — No calls will be made today</div>
+    <button class="btn btn-ghost" onclick="toggleHoliday()" style="font-size:12px; padding: 6px 14px;">Cancel Holiday</button>
+  </div>
+
+  <div class="controls-row">
+    <div class="date-badge">📅 Today: <strong id="todayDate">—</strong></div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-ghost" onclick="markAllPresent()">✅ All Present</button>
+      <button class="btn btn-ghost" onclick="resetAll()">🔄 Reset</button>
+      <button class="btn btn-ghost" onclick="openReport()" style="border-color:#a78bfa; color:#a78bfa;">🖨 Print / PDF Report</button>
+      <button class="btn btn-primary" id="triggerCallBtn" onclick="triggerCalls()">📞 Trigger Absent Calls Now</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card blue">
+      <div class="stat-label">Total Students</div>
+      <div class="stat-value" id="statTotal">120</div>
+      <div class="stat-sub">4 branches</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Present Today</div>
+      <div class="stat-value" id="statPresent">0</div>
+      <div class="stat-sub" id="statPresentPct">0%</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Absent</div>
+      <div class="stat-value" id="statAbsent">0</div>
+      <div class="stat-sub" id="statAbsentPct">0%</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">Pending Mark</div>
+      <div class="stat-value" id="statPending">120</div>
+      <div class="stat-sub">unmarked</div>
+    </div>
+  </div>
+
+  <div class="scheduler">
+    <div class="sched-info">
+      <div class="sched-clock">🕖</div>
+      <div class="sched-text">
+        <h3>Auto Call Scheduler</h3>
+        <p>Calls absent parents automatically at set time</p>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+      <label style="font-size:12px; color:var(--muted); font-family:'Space Mono',monospace;">TRIGGER TIME:</label>
+      <input type="time" class="sched-time-input" id="schedTime" value="19:00" onchange="updateSchedDisplay()">
+      <div id="schedStatus" style="font-size:11px; color:var(--accent3); font-family:'Space Mono',monospace;">⬤ SCHEDULER ARMED</div>
+    </div>
+  </div>
+
+  <div class="section-title">Branches — Click to Mark Attendance</div>
+  <div class="branch-grid" id="branchGrid"></div>
+
+  <div class="log-panel">
+    <div class="log-header">
+      <div class="log-title">📋 System Log</div>
+      <button class="btn btn-ghost" style="font-size:11px; padding:5px 12px;" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="log-body" id="logBody">
+      <div class="log-entry"><span class="log-time">BOOT</span><span class="log-msg">NABOT system initialized. Waiting for attendance data...</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ATTENDANCE MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalIfBg(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Branch Name</div>
+        <div style="font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; margin-top:3px;" id="modalSub">30 students</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-toolbar">
+      <input type="text" class="search-box" placeholder="🔍 Search student..." oninput="filterStudents(this.value)" id="studentSearch">
+      <button class="btn btn-ghost" style="font-size:12px;" onclick="modalMarkAllPresent()">✅ All Present</button>
+      <button class="btn btn-ghost" style="font-size:12px;" onclick="modalMarkAllAbsent()">❌ All Absent</button>
+    </div>
+    <div class="student-list" id="studentList"></div>
+    <div class="modal-footer">
+      <div class="absent-count">Absent in this branch: <span id="modalAbsentCount">0</span></div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+        <button class="btn btn-primary" onclick="saveAndClose()">Save & Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="report-overlay" id="reportOverlay" onclick="closeReportIfBg(event)">
+  <div class="report-modal" id="reportModal">
+    <div class="report-toolbar">
+      <div class="report-toolbar-title">📄 NABOT — ABSENT STUDENT REPORT</div>
+      <div class="report-toolbar-actions">
+        <button class="btn btn-primary" onclick="printReport()" style="font-size:12px; padding:8px 16px;">🖨 Print / Save as PDF</button>
+        <button class="btn btn-ghost" onclick="closeReport()" style="font-size:12px; padding:8px 14px;">✕ Close</button>
+      </div>
+    </div>
+    <div class="report-content" id="reportContent"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const BRANCHES = [
+  { id: 'b1', name: '11th Normal',     sub: 'Physics · Chemistry · Biology',                icon: '🔬', colorClass: 'b1' },
+  { id: 'b2', name: '11th Integrated', sub: 'Physics · Chemistry · Maths · Biology',        icon: '⚗️',  colorClass: 'b2' },
+  { id: 'b3', name: '12th Normal',     sub: 'Physics · Chemistry · Biology',                icon: '📘', colorClass: 'b3' },
+  { id: 'b4', name: '12th Integrated', sub: 'Physics · Chemistry · Maths · Biology',        icon: '🎯', colorClass: 'b4' },
+];
+
+const NAMES = ['Aarav Sharma','Rohit Kulkarni','Priya Patil','Sneha Desai','Arjun Mehta','Kavita Joshi','Vikram Singh','Ananya Verma','Rahul Nair','Deepika Rao','Suresh Iyer','Meena Pillai','Akash Gupta','Riya Shah','Mohan Tiwari','Pooja Mishra','Kunal Sawant','Swati More','Harish Pawar','Divya Shinde','Sagar Bhosale','Pallavi Wagh','Aditya Kale','Neha Gadhe','Pratik Jadhav','Sunita Gaikwad','Abhijeet Mane','Rinku Salve','Tushar Londhe','Amruta Bhale'];
+
+const rndPhone = () => '+91' + (Array.from({length:10}, (_,i) => i < 4 ? String(Math.floor(Math.random()*9)+1) : String(Math.floor(Math.random()*10))).join(''));
+
+const allStudents = {};
+BRANCHES.forEach(b => {
+  allStudents[b.id] = NAMES.map((n, i) => ({
+    id: b.id + '_' + i,
+    name: n,
+    phone: (b.id === 'b1' && i === 1) ? '+917021737823' : rndPhone(), 
+    status: 'pending',
+    branch: b.id,
+    callStatus: null,
+    reason: null
+  }));
+});
+
+let currentBranch = null;
+let holidayMode = false;
+
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+function updateSchedDisplay() {
+  const t = document.getElementById('schedTime').value;
+  document.getElementById('schedDisplay').textContent = t;
+  addLog('info', `Scheduler updated → calls at ${t}`);
+  showToast('⏱ Scheduler updated to ' + t, 'info');
+}
+
+function updateStats() {
+  let present = 0, absent = 0, total = 0;
+  Object.values(allStudents).forEach(branch => branch.forEach(s => {
+    total++;
+    if (s.status === 'present') present++;
+    if (s.status === 'absent') absent++;
+  }));
+  const pending = total - present - absent;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statPresent').textContent = present;
+  document.getElementById('statAbsent').textContent = absent;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statPresentPct').textContent = total ? Math.round(present/total*100) + '% attendance' : '0%';
+  document.getElementById('statAbsentPct').textContent = total ? Math.round(absent/total*100) + '% absent' : '0%';
+}
+
+function renderBranchGrid() {
+  const grid = document.getElementById('branchGrid');
+  grid.innerHTML = '';
+  BRANCHES.forEach(b => {
+    const students = allStudents[b.id];
+    const present = students.filter(s => s.status === 'present').length;
+    const absent  = students.filter(s => s.status === 'absent').length;
+    const total   = students.length;
+    const pct     = Math.round(present / total * 100);
+    grid.innerHTML += `
+      <div class="branch-card ${b.colorClass}" onclick="openBranch('${b.id}')">
+        <div class="branch-header">
+          <div>
+            <div class="branch-label">${b.name}</div>
+            <div class="branch-sub">${b.sub}</div>
+          </div>
+          <div class="branch-icon">${b.icon}</div>
+        </div>
+        <div class="branch-stats">
+          <div class="b-stat"><div class="b-stat-num">${total}</div><div class="b-stat-lab">Total</div></div>
+          <div class="b-stat"><div class="b-stat-num" style="color:var(--accent3)">${present}</div><div class="b-stat-lab">Present</div></div>
+          <div class="b-stat"><div class="b-stat-num" style="color:var(--danger)">${absent}</div><div class="b-stat-lab">Absent</div></div>
+          <div class="b-stat"><div class="b-stat-num" style="color:var(--muted)">${total - present - absent}</div><div class="b-stat-lab">Pending</div></div>
+        </div>
+        <div class="branch-bar"><div class="branch-bar-fill" style="width:${pct}%"></div></div>
+        <div class="branch-footer">
+          <div class="open-hint">👆 Click to mark attendance</div>
+          <div style="font-size:11px; font-family:'Space Mono',monospace; color:var(--muted)">${pct}% present</div>
+        </div>
+      </div>`;
+  });
+}
+
+function openBranch(branchId) {
+  currentBranch = branchId;
+  const b = BRANCHES.find(x => x.id === branchId);
+  document.getElementById('modalTitle').textContent = b.name + ' — Attendance';
+  document.getElementById('studentSearch').value = '';
+  renderStudentList('');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function renderStudentList(filter) {
+  const list     = document.getElementById('studentList');
+  const students = allStudents[currentBranch];
+  const filtered = students.filter(s => s.name.toLowerCase().includes(filter.toLowerCase()));
+  document.getElementById('modalSub').textContent = filtered.length + ' students shown';
+  list.innerHTML = filtered.map((s, i) => `
+    <div class="student-row ${s.status === 'absent' ? 'absent-row' : ''}" id="row_${s.id}">
+      <div class="student-num">${(i+1).toString().padStart(2,'0')}</div>
+      <div class="student-name">${s.name}</div>
+      <div class="student-phone">${s.phone}</div>
+      <div class="attendance-toggle">
+        <label class="radio-btn">
+          <input type="radio" name="att_${s.id}" value="present" ${s.status === 'present' ? 'checked' : ''} onchange="setStatus('${s.id}','present')">
+          <span class="radio-label p-label">✓ P</span>
+        </label>
+        <label class="radio-btn">
+          <input type="radio" name="att_${s.id}" value="absent" ${s.status === 'absent' ? 'checked' : ''} onchange="setStatus('${s.id}','absent')">
+          <span class="radio-label a-label">✗ A</span>
+        </label>
+      </div>
+      <div>
+        <span class="status-badge badge-${s.status === 'pending' ? 'pending' : s.status}" id="badge_${s.id}">
+          ${s.status === 'present' ? 'Present' : s.status === 'absent' ? 'Absent' : '—'}
+        </span>
+      </div>
+    </div>`).join('');
+  updateModalAbsent();
+}
+
+function setStatus(studentId, status) {
+  for (const bid in allStudents) {
+    const s = allStudents[bid].find(x => x.id === studentId);
+    if (s) {
+      s.status = status;
+      const row = document.getElementById('row_' + studentId);
+      if (row) row.className = 'student-row ' + (status === 'absent' ? 'absent-row' : '');
+      const badge = document.getElementById('badge_' + studentId);
+      if (badge) {
+        badge.className = 'status-badge badge-' + status;
+        badge.textContent = status === 'present' ? 'Present' : status === 'absent' ? 'Absent' : '—';
+      }
+      break;
+    }
+  }
+  updateModalAbsent();
+  updateStats();
+  renderBranchGrid();
+}
+
+function filterStudents(val) { renderStudentList(val); }
+
+function updateModalAbsent() {
+  if (!currentBranch) return;
+  document.getElementById('modalAbsentCount').textContent = allStudents[currentBranch].filter(s => s.status === 'absent').length;
+}
+
+function modalMarkAllPresent() {
+  allStudents[currentBranch].forEach(s => s.status = 'present');
+  renderStudentList(document.getElementById('studentSearch').value);
+  updateStats(); renderBranchGrid();
+  showToast('✅ All marked Present', 'success');
+}
+function modalMarkAllAbsent() {
+  allStudents[currentBranch].forEach(s => s.status = 'absent');
+  renderStudentList(document.getElementById('studentSearch').value);
+  updateStats(); renderBranchGrid();
+  showToast('❌ All marked Absent', 'warn');
+}
+
+function saveAndClose() {
+  const absent = allStudents[currentBranch].filter(s => s.status === 'absent').length;
+  const b = BRANCHES.find(x => x.id === currentBranch);
+  addLog('info', `Saved: ${b.name} — ${absent} absent student(s)`);
+  showToast(`💾 ${b.name}: ${absent} absent saved`, 'success');
+  closeModal();
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModalIfBg(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+function markAllPresent() {
+  Object.values(allStudents).forEach(branch => branch.forEach(s => s.status = 'present'));
+  updateStats(); renderBranchGrid();
+  addLog('success', 'All students marked present.');
+  showToast('✅ All students marked Present', 'success');
+}
+function resetAll() {
+  Object.values(allStudents).forEach(branch => branch.forEach(s => { s.status = 'pending'; s.callStatus = null; s.reason = null; }));
+  updateStats(); renderBranchGrid();
+  addLog('warn', 'Attendance reset to pending.');
+  showToast('🔄 Attendance reset', 'warn');
+}
+
+function toggleHoliday() {
+  holidayMode = !holidayMode;
+  document.getElementById('holidayBar').classList.toggle('active', holidayMode);
+  document.getElementById('holidayBtn').textContent = holidayMode ? '✅ Holiday On' : '🏖 Mark Holiday';
+  document.getElementById('triggerCallBtn').disabled = holidayMode;
+  document.getElementById('schedStatus').textContent = holidayMode ? '⬤ HOLIDAY — CALLS PAUSED' : '⬤ SCHEDULER ARMED';
+  document.getElementById('schedStatus').style.color = holidayMode ? 'var(--warn)' : 'var(--accent3)';
+  addLog(holidayMode ? 'warn' : 'success', holidayMode ? 'HOLIDAY MODE ON — all calls paused.' : 'Holiday cancelled — scheduler re-armed.');
+  showToast(holidayMode ? '🏖 Holiday mode ON — no calls today' : '✅ Holiday cancelled', holidayMode ? 'warn' : 'success');
+}
+
+async function triggerCalls() {
+  if (holidayMode) { showToast('Holiday mode is ON — no calls allowed', 'warn'); return; }
+
+  const absentStudents = [];
+  Object.values(allStudents).forEach(branch => {
+    branch.filter(s => s.status === 'absent').forEach(s => {
+      absentStudents.push({
+        name: s.name,
+        phone: s.phone,
+        branch: BRANCHES.find(b => b.id === s.branch).name,
+        date: new Date().toLocaleDateString('en-IN')
+      });
+    });
+  });
+
+  if (absentStudents.length === 0) {
+    showToast('No absent students to call!', 'success');
+    addLog('info', 'Trigger attempted — no absent students found.');
+    return;
+  }
+
+  addLog('info', `Saving attendance for ${absentStudents.length} absent students...`);
+  showToast(`📞 Initiating ${absentStudents.length} calls...`, 'info');
+
+  try {
+    await fetch('/api/attendance/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: new Date().toLocaleDateString('en-IN'), students: absentStudents })
+    });
+
+    const res  = await fetch('/api/calls/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ students: absentStudents })
+    });
+    const data = await res.json();
+
+    const failed  = (data.results || []).filter(r => r.status === 'failed').length;
+    const success = absentStudents.length - failed;
+    addLog('success', `Calls triggered — ${success} initiated, ${failed} failed.`);
+    showToast(`📞 ${success} calls initiated!${failed ? ' ⚠ ' + failed + ' failed.' : ''}`, failed ? 'warn' : 'success');
+  } catch (err) {
+    addLog('error', 'Call trigger failed: ' + err.message);
+    showToast('❌ Failed to reach server', 'error');
+  }
+}
+
+function addLog(type, msg) {
+  const t    = new Date().toTimeString().slice(0, 8);
+  const body = document.getElementById('logBody');
+  const div  = document.createElement('div');
+  div.className = `log-entry ${type}`;
+  div.innerHTML = `<span class="log-time">${t}</span><span class="log-msg">${msg}</span>`;
+  body.insertBefore(div, body.firstChild);
+}
+function clearLog() {
+  document.getElementById('logBody').innerHTML = '';
+  addLog('info', 'Log cleared.');
+}
+
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('show')));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 350); }, 3200);
+}
+
+function openReport() { buildReport(); document.getElementById('reportOverlay').classList.add('open'); }
+function closeReport() { document.getElementById('reportOverlay').classList.remove('open'); }
+function closeReportIfBg(e) { if (e.target === document.getElementById('reportOverlay')) closeReport(); }
+function printReport() { window.print(); }
+
+function buildReport() {
+  const today   = new Date();
+  const dateStr = today.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const timeStr = today.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+
+  const absentByBranch = {};
+  let totalAbsent = 0, totalPresent = 0, totalPending = 0, totalStudents = 0;
+  BRANCHES.forEach(b => {
+    const students = allStudents[b.id];
+    absentByBranch[b.id] = students.filter(s => s.status === 'absent');
+    totalAbsent   += absentByBranch[b.id].length;
+    totalPresent  += students.filter(s => s.status === 'present').length;
+    totalPending  += students.filter(s => s.status === 'pending').length;
+    totalStudents += students.length;
+  });
+
+  const content = document.getElementById('reportContent');
+
+  if (totalAbsent === 0) {
+    content.innerHTML = `
+      <div class="rpt-header">
+        <div><div class="rpt-logo-name">NABOT</div><div class="rpt-logo-sub">AI Attendance Voice System</div></div>
+        <div class="rpt-meta"><div><strong>Date:</strong> ${dateStr}</div><div><strong>Generated:</strong> ${timeStr}</div></div>
+      </div>
+      <div class="rpt-empty"><span class="big">✅</span>No absent students today — all present!</div>
+      <div class="rpt-footer"><div class="sig">Generated by NABOT AI Attendance System</div><div>Page 1 of 1</div></div>`;
+    return;
+  }
+
+  let branchHTML = '';
+  BRANCHES.forEach(b => {
+    const absent = absentByBranch[b.id];
+    if (!absent.length) return;
+    branchHTML += `
+      <div class="rpt-branch-divider">📚 ${b.name} — ${absent.length} Absent</div>
+      <table class="rpt-table">
+        <thead><tr><th>#</th><th>Student Name</th><th>Contact</th><th>Branch</th><th>Date</th><th>Reason</th><th>Call</th></tr></thead>
+        <tbody>${absent.map((s, i) => `
+          <tr>
+            <td><span class="sr">${(i+1).toString().padStart(2,'0')}</span></td>
+            <td><span class="sname">${s.name}</span></td>
+            <td><span class="sphone">${s.phone}</span></td>
+            <td><span class="sbranch">${b.name}</span></td>
+            <td>${today.toLocaleDateString('en-IN')}</td>
+            <td><span class="sreason ${!s.reason ? 'no-answer' : ''}">${s.reason || 'No answer / Not reached'}</span></td>
+            <td><span class="scall ${s.callStatus === 'done' ? 'done' : 'pending'}">${s.callStatus === 'done' ? '✓ Done' : '⏳ Pending'}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  });
+
+  const allAbsent = BRANCHES.flatMap(b => absentByBranch[b.id]);
+  const consolidatedRows = allAbsent.map((s, i) => {
+    const b = BRANCHES.find(x => x.id === s.branch);
+    return `
+      <tr>
+        <td><span class="sr">${(i+1).toString().padStart(2,'0')}</span></td>
+        <td><span class="sname">${s.name}</span></td>
+        <td><span class="sphone">${s.phone}</span></td>
+        <td><span class="sbranch">${b.name}</span></td>
+        <td>${today.toLocaleDateString('en-IN')}</td>
+        <td><span class="sreason ${!s.reason ? 'no-answer' : ''}">${s.reason || 'No answer / Not reached'}</span></td>
+        <td><span class="scall ${s.callStatus === 'done' ? 'done' : 'pending'}">${s.callStatus === 'done' ? '✓ Done' : '⏳ Pending'}</span></td>
+      </tr>`;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="rpt-header">
+      <div><div class="rpt-logo-name">NABOT</div><div class="rpt-logo-sub">AI Attendance Voice System — Absent Report</div></div>
+      <div class="rpt-meta">
+        <div><strong>Date:</strong> ${dateStr}</div>
+        <div><strong>Generated:</strong> ${timeStr}</div>
+        <div><strong>Report Type:</strong> Daily Absent Summary</div>
+        ${holidayMode ? '<div style="color:#e65100;font-weight:700;">⚠ HOLIDAY MODE WAS ACTIVE</div>' : ''}
+      </div>
+    </div>
+    <div class="rpt-summary">
+      <div class="rpt-stat"><div class="rpt-stat-num">${totalStudents}</div><div class="rpt-stat-lab">Total Students</div></div>
+      <div class="rpt-stat green"><div class="rpt-stat-num">${totalPresent}</div><div class="rpt-stat-lab">Present</div></div>
+      <div class="rpt-stat red"><div class="rpt-stat-num">${totalAbsent}</div><div class="rpt-stat-lab">Absent</div></div>
+      <div class="rpt-stat"><div class="rpt-stat-num">${totalStudents > 0 ? Math.round(totalPresent/totalStudents*100) : 0}%</div><div class="rpt-stat-lab">Attendance</div></div>
+    </div>
+    <div class="rpt-section-title">All Absent Students — Consolidated <span>${totalAbsent} records</span></div>
+    <table class="rpt-table">
+      <thead><tr><th>#</th><th>Student Name</th><th>Contact</th><th>Branch</th><th>Date</th><th>Reason (from Parent)</th><th>Call</th></tr></thead>
+      <tbody>${consolidatedRows}</tbody>
+    </table>
+    <div class="rpt-section-title" style="margin-top:8px;">Branch-wise Breakdown</div>
+    ${branchHTML}
+    <div class="rpt-footer">
+      <div class="sig">Generated automatically by NABOT AI Attendance System</div>
+      <div>Confidential — For Internal Use Only</div>
+    </div>`;
+}
+
+// ── INIT
+renderBranchGrid();
+updateStats();
+addLog('info', 'NABOT dashboard ready. Mark attendance then trigger calls.');
+</script>
+</body>
+</html>
