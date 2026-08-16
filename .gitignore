@@ -1,0 +1,11 @@
+# Secrets - never commit
+.env
+
+# Call logs contain parent names & phone numbers (PII)
+call_log.csv
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

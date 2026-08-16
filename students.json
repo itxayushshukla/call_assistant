@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "name": "Ankita",
+    "phone": "+917021737823",
+    "parent_name": "Mr. Pady",
+    "class": "XII",
+    "batch": "JEE Morning",
+    "subject": "Physics",
+    "teacher": "Mr. Patil"
+  },
+  {
+    "id": 2,
+    "name": "Ayush",
+    "phone": "+917021737823",
+    "parent_name": "Mrs. Shukla",
+    "class": "XII",
+    "batch": "NEET Evening",
+    "subject": "Chemistry",
+    "teacher": "Mrs. Rao"
+  },
+  {
+    "id": 3,
+    "name": "Tannu",
+    "phone": "+917021737823",
+    "parent_name": "Mr. Singh",
+    "class": "XI",
+    "batch": "MHT-CET Morning",
+    "subject": "Maths",
+    "teacher": "Mr. Joshi"
+  },
+  {
+    "id": 4,
+    "name": "Akash",
+    "phone": "+917021737823",
+    "parent_name": "Mrs. Vishwakrma",
+    "class": "XI",
+    "batch": "JEE Evening",
+    "subject": "Physics",
+    "teacher": "Mr. Patil"
+  },
+  {
+    "id": 5,
+    "name": "Priyanshi",
+    "phone": "+917021737823",
+    "parent_name": "Mr. Updhayay",
+    "class": "XII",
+    "batch": "NEET Morning",
+    "subject": "Biology",
+    "teacher": "Mrs. Das"
+  }
+]
